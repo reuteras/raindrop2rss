@@ -151,6 +151,7 @@ def set_variables(config, input_args):
     """Set arguments."""
     input_args.web_root = config.get("feed", "web_root")
     input_args.web_path = config.get("feed", "web_path")
+    input_args.filename = config.get("feed", "filename")
     input_args.name = config.get("feed", "author_name")
     input_args.email = config.get("feed", "author_email")
     input_args.title = config.get("feed", "contact_title")
@@ -184,7 +185,7 @@ def run_raindrop2rss(args):
         print(feed)
 
     # Write the feed to a file if new articles where found
-    if args.generate_rss or not Path(args.web_root + args.web_path + "rss.xml").is_file():
+    if args.generate_rss or not Path(args.web_root + args.web_path + args.filename).is_file():
         if not Path(args.web_root + args.web_path).is_dir():
             sys.exit("First run the command with the --install flag.")
         Path(args.web_root + args.web_path + "rss.xml").write_text(feed)
