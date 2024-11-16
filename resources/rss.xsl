@@ -55,6 +55,11 @@
               </svg>
               RSS feed preview
             </h1>
+                <div class="text-2 text-offset">
+                  Updated on
+                    <xsl:value-of select="translate(substring(atom:feed/atom:updated, 0, 17),'T',' ')" />
+                </div>
+
             <p>
               <xsl:value-of select="/atom:feed/atom:subtitle"/>
             </p>
