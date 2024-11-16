@@ -188,7 +188,7 @@ def run_raindrop2rss(args):
     if args.generate_rss or not Path(args.web_root + args.web_path + args.filename).is_file():
         if not Path(args.web_root + args.web_path).is_dir():
             sys.exit("First run the command with the --install flag.")
-        Path(args.web_root + args.web_path + "rss.xml").write_text(feed)
+        Path(args.web_root + args.web_path + args.filename).write_text(feed)
 
     # Close database
     db.close()
