@@ -21,8 +21,8 @@
                     <h2>Recent blog posts</h2>
                     <xsl:for-each select="/atom:feed/atom:entry">
                         <article>
+                            <h3><a><xsl:attribute name="href"><xsl:value-of select="atom:link/@href"/></xsl:attribute><xsl:value-of select="atom:title"/></a></h3>
                             <p class="meta">Published on <xsl:value-of select="translate(substring(atom:published, 0, 17),'T',' ')" /></p>
-                            <p><a><xsl:attribute name="href"><xsl:value-of select="atom:link/@href"/></xsl:attribute><xsl:value-of select="atom:title"/></a></p>
                             <p><xsl:value-of select="atom:summary"/></p>
                         </article>
                     </xsl:for-each>
