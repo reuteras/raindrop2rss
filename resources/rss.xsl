@@ -14,14 +14,14 @@
                     <header>
                         <img src="rss.svg" class="rim" style="width:100px" alt="RSS icon"/>
                         <h1>RSS feed preview</h1>
-                        <p>Subscribe by copying the URL from the address bar into your newsreader.</p>
                         <p class="meta">Updated on <xsl:value-of select="translate(substring(atom:feed/atom:updated, 0, 17),'T',' ')" /></p>
                         <p><xsl:value-of select="/atom:feed/atom:subtitle"/></p>
+                        <p>Subscribe by copying the URL from the address bar into your newsreader.</p>
                     </header>
                     <h2>Recent blog posts</h2>
                     <xsl:for-each select="/atom:feed/atom:entry">
                         <article>
-                            <p>Published on <xsl:value-of select="translate(substring(atom:published, 0, 17),'T',' ')" /></p>
+                            <p class="meta">Published on <xsl:value-of select="translate(substring(atom:published, 0, 17),'T',' ')" /></p>
                             <p><a><xsl:attribute name="href"><xsl:value-of select="atom:link/@href"/></xsl:attribute><xsl:value-of select="atom:title"/></a></p>
                             <p><xsl:value-of select="atom:summary"/></p>
                         </article>
