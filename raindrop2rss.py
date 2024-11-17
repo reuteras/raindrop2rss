@@ -131,7 +131,7 @@ def install(arguments):
     if not Path(arguments.web_root + arguments.web_path).is_dir():
         Path(arguments.web_root + arguments.web_path).mkdir(parents=True, exist_ok=True)
 
-    # Copy css and xslt
+    # Copy css, svg and xslt
     src_xsl = "resources/rss.xsl"
     if not Path(src_xsl).is_file():
         sys.exit("No file rss.xsl")
@@ -142,8 +142,13 @@ def install(arguments):
         sys.exit("No file styles.css")
     dst_css = arguments.web_root + arguments.web_path + "styles.css"
     shutil.copy(src_css, dst_css)
+    src_svg = "resources/rss.svg"
+    if not Path(src_svg).is_file():
+        sys.exit("No file rss.svg")
+    dst_svg = arguments.web_root + arguments.web_path + "rss.svg"
+    shutil.copy(src_svg, dst_svg)
 
-    print(f"Installed css and xslt to {arguments.web_root + arguments.web_path}")
+    print(f"Installed css,svg and xslt to {arguments.web_root + arguments.web_path}")
     sys.exit(0)
 
 
