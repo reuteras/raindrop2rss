@@ -10,15 +10,11 @@
                 <link rel="stylesheet" href="styles.css"/>
             </head>
             <body>
-                <header>
-                    <h3>This is an RSS feed</h3>
-                    <p>Subscribe by copying the URL from the address bar into your newsreader.</p>
-
-                </header>
                 <main>
                     <header>
                         <img src="rss.svg" class="rim" style="width:100px" alt="RSS icon"/>
                         <h1>RSS feed preview</h1>
+                        <p>Subscribe by copying the URL from the address bar into your newsreader.</p>
                         <p class="meta">Updated on <xsl:value-of select="translate(substring(atom:feed/atom:updated, 0, 17),'T',' ')" /></p>
                         <p><xsl:value-of select="/atom:feed/atom:subtitle"/></p>
                     </header>
