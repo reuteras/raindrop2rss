@@ -12,6 +12,7 @@ from feedgen.feed import FeedGenerator
 from html import escape
 from pathlib import Path
 from raindropiopy import API, Collection, CollectionRef, Raindrop
+from requests.exceptions import HTTPError
 
 def read_configuration(config_file):
     """Read configuration file."""
@@ -76,21 +77,23 @@ def check_for_new_articles(con, arguments):
         with API(arguments.client_secret) as api:
             done_id = Collection.get_or_create(api, title=arguments.raindrop_handled_collection).id
 
-    with API(arguments.client_secret) as api:
-        for item in Raindrop.search(api, collection=CollectionRef.Unsorted):
-            try:
-                notetext = item.other['note']
-            except KeyError:
-                notetext = ""
-            date = item.created
-            title = item.title
-            url = item.link
-            if add_article_to_db(con, date, url, title, notetext):
-                updated = True
-            # Set the tag "rss" - changing collection doesn't work at the moment
-            if arguments.raindrop_handled_collection:
-                Raindrop.update(api, id=item.id, collection=done_id, link=url, tags=["rss"])
-
+    try:
+        with API(arguments.client_secret) as api:
+            for item in Raindrop.search(api, collection=CollectionRef.Unsorted):
+                try:
+                    notetext = item.other['note']
+                except KeyError:
+                    notetext = ""
+                date = item.created
+                title = item.title
+                url = item.link
+                if add_article_to_db(con, date, url, title, notetext):
+                    updated = True
+                # Set the tag "rss" - changing collection doesn't work at the moment
+                if arguments.raindrop_handled_collection:
+                    Raindrop.update(api, id=item.id, collection=done_id, link=url, tags=["rss"])
+    except HTTPError:
+        pass
     return updated
 
 def create_rss_feed(con, arguments):
