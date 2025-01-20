@@ -7,5 +7,10 @@ requires-python = ">=3.11"
 dependencies = [
     "feedgen>=1.0.0",
     "raindrop-io-py>=0.4.1",
+]
+
+[dependency-groups]
+dev = [
+    "pylint>=3.3.3",
     "ruff>=0.7.4",
 ]
