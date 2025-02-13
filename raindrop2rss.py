@@ -18,6 +18,7 @@ from pydantic import HttpUrl
 from raindropiopy import API, Collection, CollectionRef, Raindrop
 from requests.exceptions import HTTPError
 
+
 def read_configuration(config_file: str) -> configparser.RawConfigParser:
     """Read configuration file."""
     config: configparser.RawConfigParser = configparser.RawConfigParser()
@@ -101,6 +102,7 @@ def check_for_new_articles(con, arguments) -> bool:
         pass
     return updated
 
+
 def create_rss_feed(con, arguments):
     """Create an RSS feed from links in the database."""
     feed_description: str = arguments.feed_description
@@ -117,7 +119,7 @@ def create_rss_feed(con, arguments):
     # Add entries to the RSS feed
     cursor = con.cursor()
     cursor.execute("""
-        SELECT date, article_link, article_title, note FROM articles ORDER BY id LIMIT 50
+        SELECT date, article_link, article_title, note FROM articles ORDER BY id
     """)
     for date, article_link, article_title, note in cursor.fetchall():
         fe: FeedEntry = fg.add_entry()
@@ -187,6 +189,7 @@ def generate_rss_feed(con, arguments) -> Any:
     feed_str = create_rss_feed(con=con, arguments=arguments)
     return feed_str.replace("<?xml version='1.0' encoding='UTF-8'?>","<?xml version='1.0' encoding='UTF-8'?>\n<?xml-stylesheet href='" + arguments.web_path + "rss.xsl' type='text/xsl'?>")
 
+
 def run_raindrop2rss(args) -> Literal[True]:
     # Init database
     db: sqlite3.Connection = init_db(arguments=args)
@@ -237,6 +240,7 @@ def main() -> NoReturn:
 
     run_raindrop2rss(args=args)
     sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
