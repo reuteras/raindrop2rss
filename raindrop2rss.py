@@ -80,8 +80,11 @@ def check_for_new_articles(con, arguments) -> bool:
     done_id: int = 0
 
     if arguments.raindrop_handled_collection:
-        with API(token=arguments.client_secret) as api:
-            done_id = Collection.get_or_create(api=api, title=arguments.raindrop_handled_collection).id
+        try:
+            with API(token=arguments.client_secret) as api:
+                done_id = Collection.get_or_create(api=api, title=arguments.raindrop_handled_collection).id
+        except:
+            pass
 
     try:
         with API(token=arguments.client_secret) as api:
