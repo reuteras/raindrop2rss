@@ -1,19 +1,18 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Create rss feed for links saved to raindrop.io
+"""Create rss feed for links saved to raindrop.io."""
 
 import argparse
 import configparser
-from datetime import datetime
 import shutil
 import sqlite3
 import sys
+from datetime import datetime
+from html import escape
+from pathlib import Path
 from typing import Any, Literal, NoReturn
 
 from feedgen.entry import FeedEntry
 from feedgen.feed import FeedGenerator
-from html import escape
-from pathlib import Path
 from pydantic import HttpUrl
 from raindropiopy import API, Collection, CollectionRef, Raindrop
 from requests.exceptions import HTTPError
@@ -82,26 +81,32 @@ def check_for_new_articles(con, arguments) -> bool:
     if arguments.raindrop_handled_collection:
         try:
             with API(token=arguments.client_secret) as api:
-                done_id = Collection.get_or_create(api=api, title=arguments.raindrop_handled_collection).id
-        except:
+                done_id = Collection.get_or_create(
+                    api=api, title=arguments.raindrop_handled_collection
+                ).id
+        except (HTTPError, ConnectionError):
             pass
 
     try:
         with API(token=arguments.client_secret) as api:
-            for item in Raindrop.search(api=api, collection=CollectionRef.Unsorted): # type: ignore
+            for item in Raindrop.search(api=api, collection=CollectionRef.Unsorted):  # type: ignore
                 try:
-                    notetext: str = item.other['note']
+                    notetext: str = item.other["note"]
                 except KeyError:
                     notetext: str = ""
                 date: datetime | None = item.created
                 title: str | None = item.title
                 url: HttpUrl | None = item.link
-                if add_article_to_db(con=con, date=date, alink=url, atitle=title, note=notetext):
+                if add_article_to_db(
+                    con=con, date=date, alink=url, atitle=title, note=notetext
+                ):
                     updated = True
                 # Set the tag "rss" - changing collection doesn't work at the moment
                 if arguments.raindrop_handled_collection:
-                    Raindrop.update(api=api, id=item.id, collection=done_id, link=url, tags=["rss"])
-    except HTTPError:
+                    Raindrop.update(
+                        api=api, id=item.id, collection=done_id, link=url, tags=["rss"]
+                    )
+    except (HTTPError, ConnectionError):
         pass
     return updated
 
@@ -113,7 +118,7 @@ def create_rss_feed(con, arguments):
     # Create the RSS feed
     fg = FeedGenerator()
     fg.id(id=arguments.url)
-    fg.author(author={'name':arguments.name,'email':arguments.email} )
+    fg.author(author={"name": arguments.name, "email": arguments.email})
     fg.title(title=arguments.title)
     fg.description(description=feed_description)
     fg.link(href=arguments.url, rel="alternate")
@@ -136,9 +141,8 @@ def create_rss_feed(con, arguments):
     return fg.atom_str(pretty=True).decode("utf-8")
 
 
-def install(arguments):
+def install(arguments) -> NoReturn:
     """Install css and xslt."""
-
     if not arguments.web_root or not arguments.web_path:
         print("No web_root or web_path in config.")
         sys.exit(1)
@@ -151,19 +155,19 @@ def install(arguments):
         print("No file rss.xsl")
         sys.exit(1)
     dst_xsl = arguments.web_root + arguments.web_path + "rss.xsl"
-    shutil.copy(src_xsl, dst_xsl)
+    shutil.copy(src=src_xsl, dst=dst_xsl)
     src_css = "resources/styles.css"
     if not Path(src_css).is_file():
         print("No file styles.css")
         sys.exit(1)
     dst_css = arguments.web_root + arguments.web_path + "styles.css"
-    shutil.copy(src_css, dst_css)
+    shutil.copy(src=src_css, dst=dst_css)
     src_svg = "resources/rss.svg"
     if not Path(src_svg).is_file():
         print("No file rss.svg")
         sys.exit(1)
     dst_svg = arguments.web_root + arguments.web_path + "rss.svg"
-    shutil.copy(src_svg, dst_svg)
+    shutil.copy(src=src_svg, dst=dst_svg)
 
     print(f"Installed css,svg and xslt to {arguments.web_root + arguments.web_path}")
     sys.exit(0)
@@ -180,20 +184,28 @@ def set_variables(config, input_args):
     input_args.url = config.get("feed", "contact_url")
     input_args.feed_description = config.get("feed", "feed_description")
     input_args.client_secret = config.get("raindrop", "client_secret")
-    input_args.raindrop_handled_collection = config.get("raindrop", "raindrop_handled_collection")
+    input_args.raindrop_handled_collection = config.get(
+        "raindrop", "raindrop_handled_collection"
+    )
     input_args.generate_rss = False
     input_args.db_path = config.get("feed", "db_path")
     input_args.language = config.get("feed", "language")
     return input_args
 
 
-def generate_rss_feed(con, arguments) -> Any:
+def generate_rss_feed(con, arguments) -> str:
     """Generate RSS feed."""
-    feed_str = create_rss_feed(con=con, arguments=arguments)
-    return feed_str.replace("<?xml version='1.0' encoding='UTF-8'?>","<?xml version='1.0' encoding='UTF-8'?>\n<?xml-stylesheet href='" + arguments.web_path + "rss.xsl' type='text/xsl'?>")
+    feed_str: str = create_rss_feed(con=con, arguments=arguments)
+    return feed_str.replace(
+        "<?xml version='1.0' encoding='UTF-8'?>",
+        "<?xml version='1.0' encoding='UTF-8'?>\n<?xml-stylesheet href='"
+        + arguments.web_path
+        + "rss.xsl' type='text/xsl'?>",
+    )
 
 
 def run_raindrop2rss(args) -> Literal[True]:
+    """Run raindrop2rss."""
     # Init database
     db: sqlite3.Connection = init_db(arguments=args)
 
@@ -208,10 +220,16 @@ def run_raindrop2rss(args) -> Literal[True]:
         print(feed)
 
     # Write the feed to a file if new articles where found
-    if args.generate_rss or not Path(args.web_root + args.web_path + args.filename).is_file():
+    if (
+        args.generate_rss
+        or not Path(args.web_root + args.web_path + args.filename).is_file()
+    ):
         if not Path(args.web_root + args.web_path).is_dir():
-            sys.exit("First run the command with the --install flag.")
-        Path(args.web_root + args.web_path + args.filename).write_text(feed, encoding="utf-8")
+            print("First run the command with the --install flag.")
+            sys.exit(1)
+        Path(args.web_root + args.web_path + args.filename).write_text(
+            data=feed, encoding="utf-8"
+        )
 
     # Close database
     db.close()
@@ -228,15 +246,23 @@ def main() -> NoReturn:
             If you find a bug please let me know.""",
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
-    parser.add_argument("-o", "--stdout", action="store_true", help="Dump rss to stdout")
-    parser.add_argument("-i", "--install", action="store_true", help="Install css and xslt")
+    parser.add_argument(
+        "-o", "--stdout", action="store_true", help="Dump rss to stdout"
+    )
+    parser.add_argument(
+        "-i", "--install", action="store_true", help="Install css and xslt"
+    )
     input_args: argparse.Namespace = parser.parse_args()
 
     # Read configuration and set variables
-    configuration = read_configuration("raindrop2rss.cfg")
+    configuration: configparser.RawConfigParser = read_configuration(
+        config_file="raindrop2rss.cfg"
+    )
 
     # Set configuration variables
-    args: argparse.Namespace = set_variables(configuration, input_args)
+    args: argparse.Namespace = set_variables(
+        config=configuration, input_args=input_args
+    )
 
     if args.install:
         install(arguments=args)
