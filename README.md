@@ -16,4 +16,3 @@ uvx litecli articles.db
 - I use [feedgen](https://feedgen.kiesow.be/) to create the RSS feed
 - I currently use [raindrop-io-py](https://github.com/PBorocz/raindrop-io-py) to access raindrop.io
 - Tips on styling the feed from [Darek Kay](https://darekkay.com/blog/rss-styling/)
-
