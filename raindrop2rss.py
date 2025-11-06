@@ -142,20 +142,20 @@ def create_rss_feed(con, arguments):
 
 
 def install(arguments) -> NoReturn:
-    """Install css and xslt."""
+    """Install css, JavaScript, and svg resources."""
     if not arguments.web_root or not arguments.web_path:
         print("No web_root or web_path in config.")
         sys.exit(1)
     if not Path(arguments.web_root + arguments.web_path).is_dir():
         Path(arguments.web_root + arguments.web_path).mkdir(parents=True, exist_ok=True)
 
-    # Copy css, svg and xslt
-    src_xsl = "resources/rss.xsl"
-    if not Path(src_xsl).is_file():
-        print("No file rss.xsl")
+    # Copy css, svg and JavaScript
+    src_js = "resources/rss.js"
+    if not Path(src_js).is_file():
+        print("No file rss.js")
         sys.exit(1)
-    dst_xsl = arguments.web_root + arguments.web_path + "rss.xsl"
-    shutil.copy(src=src_xsl, dst=dst_xsl)
+    dst_js = arguments.web_root + arguments.web_path + "rss.js"
+    shutil.copy(src=src_js, dst=dst_js)
     src_css = "resources/styles.css"
     if not Path(src_css).is_file():
         print("No file styles.css")
@@ -169,7 +169,7 @@ def install(arguments) -> NoReturn:
     dst_svg = arguments.web_root + arguments.web_path + "rss.svg"
     shutil.copy(src=src_svg, dst=dst_svg)
 
-    print(f"Installed css,svg and xslt to {arguments.web_root + arguments.web_path}")
+    print(f"Installed css, svg and JavaScript to {arguments.web_root + arguments.web_path}")
     sys.exit(0)
 
 
@@ -200,7 +200,7 @@ def generate_rss_feed(con, arguments) -> str:
         "<?xml version='1.0' encoding='UTF-8'?>",
         "<?xml version='1.0' encoding='UTF-8'?>\n<?xml-stylesheet href='"
         + arguments.web_path
-        + "rss.xsl' type='text/xsl'?>",
+        + "rss.js' type='text/javascript'?>",
     )
 
 
@@ -250,7 +250,7 @@ def main() -> NoReturn:
         "-o", "--stdout", action="store_true", help="Dump rss to stdout"
     )
     parser.add_argument(
-        "-i", "--install", action="store_true", help="Install css and xslt"
+        "-i", "--install", action="store_true", help="Install css, JavaScript, and svg resources"
     )
     input_args: argparse.Namespace = parser.parse_args()
 
