@@ -2,6 +2,116 @@
 
 A tool to get links from [raindrop.io](https://raindrop.io) and create a RSS feed with the links and titles. My use case is to share links to colleagues and friends.
 
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/reuteras/raindrop2rss.git
+cd raindrop2rss
+```
+
+2. Install using uv (recommended):
+```bash
+uv sync
+```
+
+Or using pip:
+```bash
+pip install -e .
+```
+
+## Configuration
+
+1. Copy the default configuration file:
+```bash
+cp default-raindrop2rss.cfg raindrop2rss.cfg
+```
+
+2. Edit `raindrop2rss.cfg` with your settings:
+```ini
+[raindrop]
+client_secret=<your Raindrop.io API token>
+raindrop_handled_collection=Done
+
+[feed]
+web_path=/feeds/
+web_root=/var/www/html
+filename=it.xml
+author_name=Your Name
+author_email=your@email.com
+contact_url=https://yourwebsite.com
+contact_title=Your Feed Title
+feed_description=Your feed description
+db_path=articles.db
+language=en
+```
+
+### Getting a Raindrop.io API Token
+
+1. Go to [Raindrop.io App Settings](https://app.raindrop.io/settings/integrations)
+2. Click "Create new app"
+3. Once created, click on your app to get the test token
+4. Copy the token to `client_secret` in your config file
+
+## Usage
+
+### First-time Setup
+
+Install the required CSS, JavaScript, and SVG resources to your web directory:
+
+```bash
+uv run python raindrop2rss.py --install
+```
+
+This will copy the necessary files to the `web_root` + `web_path` location specified in your config.
+
+### Generate the RSS Feed
+
+Run the script to check for new articles in your Raindrop.io unsorted collection and generate the RSS feed:
+
+```bash
+uv run python raindrop2rss.py
+```
+
+The script will:
+1. Connect to Raindrop.io and fetch unsorted bookmarks
+2. Add new bookmarks to the local SQLite database
+3. Generate an RSS feed at `web_root/web_path/filename`
+4. Optionally move processed bookmarks to the collection specified in `raindrop_handled_collection`
+
+### Command-line Options
+
+- `-o, --stdout` - Output the RSS feed to stdout (useful for testing)
+- `-i, --install` - Install CSS, JavaScript, and SVG resources
+- `-a, --all` - Download all raindrops from all collections (not just unsorted)
+- `-v, --verbose` - Verbose output
+- `-h, --help` - Show help message
+
+### Examples
+
+Preview the feed without writing to file:
+```bash
+uv run python raindrop2rss.py --stdout
+```
+
+Initial setup or migration - download ALL raindrops from all collections:
+```bash
+uv run python raindrop2rss.py --all
+```
+
+This is useful when:
+- Setting up the feed on a new server
+- Rebuilding your feed database from scratch
+- Migrating your RSS feed setup
+
+Note: When using `--all`, items won't be moved to the "done" collection since they're already organized.
+
+Run as a cron job to automatically update the feed:
+```bash
+# Add to crontab to run every hour
+0 * * * * cd /path/to/raindrop2rss && uv run python raindrop2rss.py
+```
+
 ## Tips
 
 If you need to update the SQLite3 database you can use the following command:
