@@ -83,6 +83,7 @@ The script will:
 
 - `-o, --stdout` - Output the RSS feed to stdout (useful for testing)
 - `-i, --install` - Install CSS, JavaScript, and SVG resources
+- `-a, --all` - Download all raindrops from all collections (not just unsorted)
 - `-v, --verbose` - Verbose output
 - `-h, --help` - Show help message
 
@@ -92,6 +93,18 @@ Preview the feed without writing to file:
 ```bash
 uv run python raindrop2rss.py --stdout
 ```
+
+Initial setup or migration - download ALL raindrops from all collections:
+```bash
+uv run python raindrop2rss.py --all
+```
+
+This is useful when:
+- Setting up the feed on a new server
+- Rebuilding your feed database from scratch
+- Migrating your RSS feed setup
+
+Note: When using `--all`, items won't be moved to the "done" collection since they're already organized.
 
 Run as a cron job to automatically update the feed:
 ```bash

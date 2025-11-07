@@ -78,7 +78,8 @@ def check_for_new_articles(con, arguments) -> bool:
     updated = False
     done_id: int = 0
 
-    if arguments.raindrop_handled_collection:
+    # Only set up "done" collection if not downloading all items
+    if arguments.raindrop_handled_collection and not arguments.all:
         try:
             with API(token=arguments.client_secret) as api:
                 done_id = Collection.get_or_create(
@@ -89,7 +90,13 @@ def check_for_new_articles(con, arguments) -> bool:
 
     try:
         with API(token=arguments.client_secret) as api:
-            for item in Raindrop.search(api=api, collection=CollectionRef.Unsorted):  # type: ignore
+            # Fetch all raindrops if --all flag is set, otherwise only unsorted
+            if arguments.all:
+                items = Raindrop.search(api=api)  # type: ignore
+            else:
+                items = Raindrop.search(api=api, collection=CollectionRef.Unsorted)  # type: ignore
+
+            for item in items:
                 try:
                     notetext: str = item.other["note"]
                 except KeyError:
@@ -101,8 +108,8 @@ def check_for_new_articles(con, arguments) -> bool:
                     con=con, date=date, alink=url, atitle=title, note=notetext
                 ):
                     updated = True
-                # Set the tag "rss" - changing collection doesn't work at the moment
-                if arguments.raindrop_handled_collection:
+                # Set the tag "rss" only when processing unsorted items (not when using --all)
+                if arguments.raindrop_handled_collection and not arguments.all:
                     Raindrop.update(
                         api=api, id=item.id, collection=done_id, link=url, tags=["rss"]
                     )
@@ -251,6 +258,9 @@ def main() -> NoReturn:
     )
     parser.add_argument(
         "-i", "--install", action="store_true", help="Install css, JavaScript, and svg resources"
+    )
+    parser.add_argument(
+        "-a", "--all", action="store_true", help="Download all raindrops (not just unsorted)"
     )
     input_args: argparse.Namespace = parser.parse_args()
 
