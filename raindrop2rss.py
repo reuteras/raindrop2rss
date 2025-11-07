@@ -201,16 +201,8 @@ def set_variables(config, input_args):
 
 
 def generate_rss_feed(con, arguments) -> str:
-    """Generate RSS feed with embedded JavaScript for browser rendering."""
+    """Generate RSS feed with JavaScript reference for browser rendering."""
     feed_str: str = create_rss_feed(con=con, arguments=arguments)
-
-    # Read the JavaScript file
-    js_file_path = Path("resources/rss.js")
-    if js_file_path.is_file():
-        js_content = js_file_path.read_text(encoding="utf-8")
-    else:
-        # Fallback if file doesn't exist
-        js_content = ""
 
     # Add CSS stylesheet reference
     feed_str = feed_str.replace(
@@ -218,15 +210,15 @@ def generate_rss_feed(con, arguments) -> str:
         f"<?xml version='1.0' encoding='UTF-8'?>\n<?xml-stylesheet href='{arguments.web_path}styles.css' type='text/css'?>"
     )
 
-    # Embed JavaScript directly inside the feed element
-    # Browsers don't support JavaScript via xml-stylesheet processing instruction,
-    # so we embed it as an XHTML script element inside the feed
-    script_tag = f'<xhtml:script xmlns:xhtml="http://www.w3.org/1999/xhtml"><![CDATA[\n{js_content}\n]]></xhtml:script>\n  '
+    # Add external JavaScript reference with XHTML namespace
+    # Using Jake Archibald's technique: https://jakearchibald.com/2025/making-xml-human-readable-without-xslt/
+    # The script replaces the XML document with HTML when viewed in a browser
+    script_tag = f'<script xmlns="http://www.w3.org/1999/xhtml" src="{arguments.web_path}rss.js" defer=""></script>\n  '
 
     # Insert script after the opening feed tag
     feed_str = feed_str.replace(
         '<feed xmlns="http://www.w3.org/2005/Atom">',
-        f'<feed xmlns="http://www.w3.org/2005/Atom" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n  {script_tag}'
+        f'<feed xmlns="http://www.w3.org/2005/Atom">\n  {script_tag}'
     )
 
     return feed_str
