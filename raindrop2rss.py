@@ -149,34 +149,29 @@ def create_rss_feed(con, arguments):
 
 
 def install(arguments) -> NoReturn:
-    """Install css, JavaScript, and svg resources."""
+    """Install css, JavaScript, svg, and favicon resources."""
     if not arguments.web_root or not arguments.web_path:
         print("No web_root or web_path in config.")
         sys.exit(1)
     if not Path(arguments.web_root + arguments.web_path).is_dir():
         Path(arguments.web_root + arguments.web_path).mkdir(parents=True, exist_ok=True)
 
-    # Copy css, svg and JavaScript
-    src_js = "resources/rss.js"
-    if not Path(src_js).is_file():
-        print("No file rss.js")
-        sys.exit(1)
-    dst_js = arguments.web_root + arguments.web_path + "rss.js"
-    shutil.copy(src=src_js, dst=dst_js)
-    src_css = "resources/styles.css"
-    if not Path(src_css).is_file():
-        print("No file styles.css")
-        sys.exit(1)
-    dst_css = arguments.web_root + arguments.web_path + "styles.css"
-    shutil.copy(src=src_css, dst=dst_css)
-    src_svg = "resources/rss.svg"
-    if not Path(src_svg).is_file():
-        print("No file rss.svg")
-        sys.exit(1)
-    dst_svg = arguments.web_root + arguments.web_path + "rss.svg"
-    shutil.copy(src=src_svg, dst=dst_svg)
+    # Copy css, svg, JavaScript, and favicon
+    files = [
+        ("resources/rss.js", "rss.js"),
+        ("resources/styles.css", "styles.css"),
+        ("resources/rss.svg", "rss.svg"),
+        ("resources/favicon.svg", "favicon.svg"),
+    ]
 
-    print(f"Installed css, svg and JavaScript to {arguments.web_root + arguments.web_path}")
+    for src, dst_name in files:
+        if not Path(src).is_file():
+            print(f"No file {src}")
+            sys.exit(1)
+        dst = arguments.web_root + arguments.web_path + dst_name
+        shutil.copy(src=src, dst=dst)
+
+    print(f"Installed css, svg, JavaScript, and favicon to {arguments.web_root + arguments.web_path}")
     sys.exit(0)
 
 
