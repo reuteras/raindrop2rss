@@ -93,10 +93,16 @@
     title.textContent = `RSS feed preview | ${feedTitle}`;
     head.appendChild(title);
 
-    const link = html('link');
-    link.setAttribute('rel', 'stylesheet');
-    link.setAttribute('href', basePath + 'styles.css');
-    head.appendChild(link);
+    const linkCSS = html('link');
+    linkCSS.setAttribute('rel', 'stylesheet');
+    linkCSS.setAttribute('href', basePath + 'styles.css');
+    head.appendChild(linkCSS);
+
+    const linkFavicon = html('link');
+    linkFavicon.setAttribute('rel', 'icon');
+    linkFavicon.setAttribute('type', 'image/svg+xml');
+    linkFavicon.setAttribute('href', basePath + 'favicon.svg');
+    head.appendChild(linkFavicon);
 
     htmlRoot.appendChild(head);
 
@@ -173,6 +179,8 @@
     htmlRoot.appendChild(body);
 
     // Replace the XML root with the HTML root
+    // Note: This may trigger harmless errors in Vivaldi's internal animation detection code
+    // The feed will still display correctly
     document.replaceChild(htmlRoot, document.documentElement);
     }
 })();
