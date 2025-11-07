@@ -62,10 +62,21 @@
 
     // Debug: Log what we found
     console.log('Feed element:', feed.tagName);
+    console.log('Feed namespace:', feed.namespaceURI);
+    console.log('Feed has children:', feed.children.length);
+
+    // List all child elements
+    console.log('Child elements:');
+    for (let i = 0; i < Math.min(5, feed.children.length); i++) {
+        const child = feed.children[i];
+        console.log(`  ${i}: ${child.tagName} (namespace: ${child.namespaceURI})`);
+    }
+
     console.log('Feed title:', feedTitle);
     console.log('Feed subtitle:', feedSubtitle);
     console.log('Feed updated:', feedUpdated);
     console.log('Number of entries:', feed.getElementsByTagNameNS(atomNS, 'entry').length);
+    console.log('Number of entries (no NS):', feed.getElementsByTagName('entry').length);
 
     // Get base path from current location for assets
     const currentPath = window.location.pathname;
