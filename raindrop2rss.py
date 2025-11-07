@@ -131,10 +131,10 @@ def create_rss_feed(con, arguments):
     fg.link(href=arguments.url, rel="alternate")
     fg.language(language=arguments.language)
 
-    # Add entries to the RSS feed
+    # Add entries to the RSS feed (newest first)
     cursor = con.cursor()
     cursor.execute("""
-        SELECT date, article_link, article_title, note FROM articles ORDER BY id
+        SELECT date, article_link, article_title, note FROM articles ORDER BY id DESC
     """)
     for date, article_link, article_title, note in cursor.fetchall():
         fe: FeedEntry = fg.add_entry()
@@ -201,14 +201,35 @@ def set_variables(config, input_args):
 
 
 def generate_rss_feed(con, arguments) -> str:
-    """Generate RSS feed."""
+    """Generate RSS feed with embedded JavaScript for browser rendering."""
     feed_str: str = create_rss_feed(con=con, arguments=arguments)
-    return feed_str.replace(
+
+    # Read the JavaScript file
+    js_file_path = Path("resources/rss.js")
+    if js_file_path.is_file():
+        js_content = js_file_path.read_text(encoding="utf-8")
+    else:
+        # Fallback if file doesn't exist
+        js_content = ""
+
+    # Add CSS stylesheet reference
+    feed_str = feed_str.replace(
         "<?xml version='1.0' encoding='UTF-8'?>",
-        "<?xml version='1.0' encoding='UTF-8'?>\n<?xml-stylesheet href='"
-        + arguments.web_path
-        + "rss.js' type='text/javascript'?>",
+        f"<?xml version='1.0' encoding='UTF-8'?>\n<?xml-stylesheet href='{arguments.web_path}styles.css' type='text/css'?>"
     )
+
+    # Embed JavaScript directly inside the feed element
+    # Browsers don't support JavaScript via xml-stylesheet processing instruction,
+    # so we embed it as an XHTML script element inside the feed
+    script_tag = f'<xhtml:script xmlns:xhtml="http://www.w3.org/1999/xhtml"><![CDATA[\n{js_content}\n]]></xhtml:script>\n  '
+
+    # Insert script after the opening feed tag
+    feed_str = feed_str.replace(
+        '<feed xmlns="http://www.w3.org/2005/Atom">',
+        f'<feed xmlns="http://www.w3.org/2005/Atom" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n  {script_tag}'
+    )
+
+    return feed_str
 
 
 def run_raindrop2rss(args) -> Literal[True]:
