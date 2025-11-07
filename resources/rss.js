@@ -9,11 +9,20 @@
 (function() {
     'use strict';
 
-    const atomNS = 'http://www.w3.org/2005/Atom';
-    const xhtmlNS = 'http://www.w3.org/1999/xhtml';
+    // Wait for the entire document to be loaded before transforming
+    // In XML documents, defer doesn't work like HTML, so we need to wait
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', transformFeed);
+    } else {
+        transformFeed();
+    }
 
-    // Get the original XML feed element
-    const feed = document.documentElement;
+    function transformFeed() {
+        const atomNS = 'http://www.w3.org/2005/Atom';
+        const xhtmlNS = 'http://www.w3.org/1999/xhtml';
+
+        // Get the original XML feed element
+        const feed = document.documentElement;
 
     /**
      * Get text content from XML element, handling namespace
@@ -183,4 +192,5 @@
 
     // Replace the XML root with the HTML root
     document.replaceChild(htmlRoot, document.documentElement);
+    }
 })();
