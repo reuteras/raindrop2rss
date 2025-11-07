@@ -60,6 +60,13 @@
     const feedSubtitle = getElementText(feed, 'subtitle', atomNS);
     const feedUpdated = getElementText(feed, 'updated', atomNS);
 
+    // Debug: Log what we found
+    console.log('Feed element:', feed.tagName);
+    console.log('Feed title:', feedTitle);
+    console.log('Feed subtitle:', feedSubtitle);
+    console.log('Feed updated:', feedUpdated);
+    console.log('Number of entries:', feed.getElementsByTagNameNS(atomNS, 'entry').length);
+
     // Get base path from current location for assets
     const currentPath = window.location.pathname;
     const basePath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
