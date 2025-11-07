@@ -213,12 +213,15 @@ def generate_rss_feed(con, arguments) -> str:
     # Add external JavaScript reference with XHTML namespace
     # Using Jake Archibald's technique: https://jakearchibald.com/2025/making-xml-human-readable-without-xslt/
     # The script replaces the XML document with HTML when viewed in a browser
-    script_tag = f'<script xmlns="http://www.w3.org/1999/xhtml" src="{arguments.web_path}rss.js" defer="" />\n  '
+    script_tag = f'\n  <script xmlns="http://www.w3.org/1999/xhtml" src="{arguments.web_path}rss.js" defer="" />'
 
-    # Insert script after the opening feed tag
-    feed_str = feed_str.replace(
-        '<feed xmlns="http://www.w3.org/2005/Atom">',
-        f'<feed xmlns="http://www.w3.org/2005/Atom">\n  {script_tag}'
+    # Insert script after the opening feed tag - handle both single and double quotes
+    import re
+    feed_str = re.sub(
+        r'(<feed[^>]*>)',
+        r'\1' + script_tag,
+        feed_str,
+        count=1
     )
 
     return feed_str
