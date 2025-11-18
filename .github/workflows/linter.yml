@@ -57,3 +57,5 @@ jobs:
           VALIDATE_PYTHON_MYPY: false
           VALIDATE_PYTHON_PYINK: false
           VALIDATE_PYTHON_PYLINT: false
+          # TODO: Re-enable after next super-linter update
+          VALIDATE_PYTHON_RUFF_FORMAT: false
