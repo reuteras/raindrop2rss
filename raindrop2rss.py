@@ -212,10 +212,7 @@ def generate_rss_feed(con, arguments) -> str:
         f"<?xml version='1.0' encoding='UTF-8'?>\n"
         f"<?xml-stylesheet href='{arguments.web_path}styles.css' type='text/css'?>"
     )
-    feed_str = feed_str.replace(
-        "<?xml version='1.0' encoding='UTF-8'?>",
-        stylesheet
-    )
+    feed_str = feed_str.replace("<?xml version='1.0' encoding='UTF-8'?>", stylesheet)
 
     # Add external JavaScript reference with XHTML namespace
     # Using Jake Archibald's technique:
@@ -228,12 +225,7 @@ def generate_rss_feed(con, arguments) -> str:
 
     # Insert script after the opening feed tag
     # Handle both single and double quotes
-    feed_str = re.sub(
-        r'(<feed[^>]*>)',
-        r'\1' + script_tag,
-        feed_str,
-        count=1
-    )
+    feed_str = re.sub(r"(<feed[^>]*>)", r"\1" + script_tag, feed_str, count=1)
 
     return feed_str
 
@@ -284,10 +276,16 @@ def main() -> NoReturn:
         "-o", "--stdout", action="store_true", help="Dump rss to stdout"
     )
     parser.add_argument(
-        "-i", "--install", action="store_true", help="Install css, JavaScript, and svg resources"
+        "-i",
+        "--install",
+        action="store_true",
+        help="Install css, JavaScript, and svg resources",
     )
     parser.add_argument(
-        "-a", "--all", action="store_true", help="Download all raindrops (not just unsorted)"
+        "-a",
+        "--all",
+        action="store_true",
+        help="Download all raindrops (not just unsorted)",
     )
     input_args: argparse.Namespace = parser.parse_args()
 
