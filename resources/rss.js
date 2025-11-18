@@ -55,15 +55,6 @@
       return document.createElementNS(xhtmlNS, tagName)
     }
 
-    /**
-     * Escape HTML special characters
-     */
-    function escapeHtml (text) {
-      const div = html('div')
-      div.textContent = text
-      return div.innerHTML
-    }
-
     // Extract feed metadata
     const feedTitle = getElementText(feed, 'title', atomNS)
     const feedSubtitle = getElementText(feed, 'subtitle', atomNS)
