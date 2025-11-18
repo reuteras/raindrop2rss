@@ -3,6 +3,7 @@
 
 import argparse
 import configparser
+import re
 import shutil
 import sqlite3
 import sys
@@ -33,12 +34,18 @@ def init_db(arguments) -> sqlite3.Connection:
     try:
         con: sqlite3.Connection = sqlite3.connect(database=arguments.db_path)
         cursor: sqlite3.Cursor = con.cursor()
-    except Exception:
+    except sqlite3.Error:
         print("Can't connect to or update database.")
         sys.exit(1)
     try:
         cursor.execute(
-            "CREATE TABLE articles(id INTEGER PRIMARY KEY, date VARCHAR, article_link VARCHAR UNIQUE, article_title VARCHAR, note VARCHAR)"
+            """CREATE TABLE articles(
+                id INTEGER PRIMARY KEY,
+                date VARCHAR,
+                article_link VARCHAR UNIQUE,
+                article_title VARCHAR,
+                note VARCHAR
+            )"""
         )
     except sqlite3.OperationalError:
         pass
@@ -171,7 +178,8 @@ def install(arguments) -> NoReturn:
         dst = arguments.web_root + arguments.web_path + dst_name
         shutil.copy(src=src, dst=dst)
 
-    print(f"Installed css, svg, JavaScript, and favicon to {arguments.web_root + arguments.web_path}")
+    install_path = arguments.web_root + arguments.web_path
+    print(f"Installed css, svg, JavaScript, and favicon to {install_path}")
     sys.exit(0)
 
 
@@ -200,24 +208,24 @@ def generate_rss_feed(con, arguments) -> str:
     feed_str: str = create_rss_feed(con=con, arguments=arguments)
 
     # Add CSS stylesheet reference
-    feed_str = feed_str.replace(
-        "<?xml version='1.0' encoding='UTF-8'?>",
-        f"<?xml version='1.0' encoding='UTF-8'?>\n<?xml-stylesheet href='{arguments.web_path}styles.css' type='text/css'?>"
+    stylesheet = (
+        f"<?xml version='1.0' encoding='UTF-8'?>\n"
+        f"<?xml-stylesheet href='{arguments.web_path}styles.css' type='text/css'?>"
     )
+    feed_str = feed_str.replace("<?xml version='1.0' encoding='UTF-8'?>", stylesheet)
 
     # Add external JavaScript reference with XHTML namespace
-    # Using Jake Archibald's technique: https://jakearchibald.com/2025/making-xml-human-readable-without-xslt/
+    # Using Jake Archibald's technique:
+    # https://jakearchibald.com/2025/making-xml-human-readable-without-xslt/
     # The script replaces the XML document with HTML when viewed in a browser
-    script_tag = f'\n  <script xmlns="http://www.w3.org/1999/xhtml" src="{arguments.web_path}rss.js" defer="" />'
-
-    # Insert script after the opening feed tag - handle both single and double quotes
-    import re
-    feed_str = re.sub(
-        r'(<feed[^>]*>)',
-        r'\1' + script_tag,
-        feed_str,
-        count=1
+    script_tag = (
+        f'\n  <script xmlns="http://www.w3.org/1999/xhtml" '
+        f'src="{arguments.web_path}rss.js" defer="" />'
     )
+
+    # Insert script after the opening feed tag
+    # Handle both single and double quotes
+    feed_str = re.sub(r"(<feed[^>]*>)", r"\1" + script_tag, feed_str, count=1)
 
     return feed_str
 
@@ -268,10 +276,16 @@ def main() -> NoReturn:
         "-o", "--stdout", action="store_true", help="Dump rss to stdout"
     )
     parser.add_argument(
-        "-i", "--install", action="store_true", help="Install css, JavaScript, and svg resources"
+        "-i",
+        "--install",
+        action="store_true",
+        help="Install css, JavaScript, and svg resources",
     )
     parser.add_argument(
-        "-a", "--all", action="store_true", help="Download all raindrops (not just unsorted)"
+        "-a",
+        "--all",
+        action="store_true",
+        help="Download all raindrops (not just unsorted)",
     )
     input_args: argparse.Namespace = parser.parse_args()
 
