@@ -456,17 +456,18 @@ wheels = [
 
 [[package]]
 name = "raindrop-io-py"
-version = "0.4.6"
+version = "0.4.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "email-validator" },
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "requests-oauthlib" },
+    { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c9/1b/8ad7114b78291d38127368f755a0b2f9df486a6937e1be4cdccddfae1f5d/raindrop_io_py-0.4.6.tar.gz", hash = "sha256:5a0cd99c8121d23dcd95c9aaff85c7c95f67541713a6b3e1a1cfbef0c1dd048f", size = 21906, upload-time = "2025-07-09T23:38:17.893Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/73/b4/900fb3e9196183f2b6679b400de7d3a6b62c15fa085d01e96219c667e2ff/raindrop_io_py-0.4.7.tar.gz", hash = "sha256:87ce5f4e0dae806c4826172d2104d27084c7c61394e5c8da8308c60ce2cf9546", size = 21810, upload-time = "2025-12-07T23:32:52.045Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/89/0f/506c67656c67e16789f83f537fd457875df0aa28d1d063aaa8b0d4f3ca89/raindrop_io_py-0.4.6-py3-none-any.whl", hash = "sha256:112095e2d4e6c39845733f755a4bc710e73aa09d7cb47fb588b45a9414d9eb35", size = 20434, upload-time = "2025-07-09T23:38:16.598Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/01/28f12fbffd530b6fb9e94c6dab62d495abdfc24ce80ff78bf95c95fcaff3/raindrop_io_py-0.4.7-py3-none-any.whl", hash = "sha256:fa95961121973284a5e2b822b2db19a3a2b37f52d3bf9e0ec0e70585d750eee6", size = 20555, upload-time = "2025-12-07T23:32:50.771Z" },
 ]
 
 [[package]]
