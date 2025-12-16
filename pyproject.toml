@@ -6,8 +6,8 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "feedgen>=1.0.0",
-    "raindrop-io-py>=0.4.1",
     "pydantic<3.0.0",
+    "raindrop-io-py",
 ]
 
 [dependency-groups]
@@ -58,6 +58,9 @@ docstring-code-format = false
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
+
+[tool.uv.sources]
+raindrop-io-py = { git = "https://github.com/reuteras/raindrop-io-py.git" }
 
 [tool.ruff.lint.pydocstyle]
 convention="google"
