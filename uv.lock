@@ -457,17 +457,13 @@ wheels = [
 [[package]]
 name = "raindrop-io-py"
 version = "0.4.7"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/PBorocz/raindrop-io-py.git#765e5b2885fb71fc5a4fc949f5cbe685c40c6572" }
 dependencies = [
     { name = "email-validator" },
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "requests-oauthlib" },
     { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/73/b4/900fb3e9196183f2b6679b400de7d3a6b62c15fa085d01e96219c667e2ff/raindrop_io_py-0.4.7.tar.gz", hash = "sha256:87ce5f4e0dae806c4826172d2104d27084c7c61394e5c8da8308c60ce2cf9546", size = 21810, upload-time = "2025-12-07T23:32:52.045Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1a/01/28f12fbffd530b6fb9e94c6dab62d495abdfc24ce80ff78bf95c95fcaff3/raindrop_io_py-0.4.7-py3-none-any.whl", hash = "sha256:fa95961121973284a5e2b822b2db19a3a2b37f52d3bf9e0ec0e70585d750eee6", size = 20555, upload-time = "2025-12-07T23:32:50.771Z" },
 ]
 
 [[package]]
@@ -490,7 +486,7 @@ dev = [
 requires-dist = [
     { name = "feedgen", specifier = ">=1.0.0" },
     { name = "pydantic", specifier = "<3.0.0" },
-    { name = "raindrop-io-py", specifier = ">=0.4.7" },
+    { name = "raindrop-io-py", git = "https://github.com/PBorocz/raindrop-io-py.git" },
 ]
 
 [package.metadata.requires-dev]
