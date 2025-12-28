@@ -111,14 +111,16 @@ def check_for_new_articles(con, arguments) -> bool:
                 date: datetime | None = item.created
                 title: str | None = item.title
                 url: HttpUrl | None = item.link
+                # Convert HttpUrl to string for database storage
+                url_str: str = str(url) if url else ""
                 if add_article_to_db(
-                    con=con, date=date, alink=url, atitle=title, note=notetext
+                    con=con, date=date, alink=url_str, atitle=title, note=notetext
                 ):
                     updated = True
                 # Set the tag "rss" only when processing unsorted items (not when using --all)
                 if arguments.raindrop_handled_collection and not arguments.all:
                     Raindrop.update(
-                        api=api, id=item.id, collection=done_id, link=url, tags=["rss"]
+                        api=api, id=item.id, collection=done_id, link=url_str, tags=["rss"]
                     )
     except (HTTPError, ConnectionError):
         pass
