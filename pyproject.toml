@@ -60,7 +60,7 @@ docstring-code-format = false
 docstring-code-line-length = "dynamic"
 
 [tool.uv.sources]
-raindrop-io-py = { git = "https://github.com/PBorocz/raindrop-io-py.git" }
+raindrop-io-py = { path = "raindrop-io-py-fork", editable = true }
 
 [tool.ruff.lint.pydocstyle]
 convention="google"

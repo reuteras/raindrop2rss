@@ -1,0 +1,57 @@
+fail_fast: true
+repos:
+
+################################################################################
+# Look for instances of unused imports.
+# (taking out 2025-12-07 as I don't have the patience to deal with py3.14 mismatch)
+################################################################################
+# - repo: https://github.com/hakancelikdev/unimport
+#   rev: 1.3.0
+#   hooks:
+#   - id: unimport
+#     name: Running check for unused imports
+#     args:
+#     - --include-star-import
+#     - --ignore-init
+#     - --gitignore
+
+################################################################################
+# Run Ruff!
+################################################################################
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.14.8
+  hooks:
+    - id: ruff
+      name: Running ruff linter
+      args: ["--fix", "raindropiopy/"]
+    - id: ruff-format
+      name: Running ruff formatter
+      args: ["raindropiopy/"]
+
+################################################################################
+# Confirm we're not accidentally checking in large files:
+################################################################################
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.6.0
+  hooks:
+  - id: check-added-large-files
+    name: Running check for large files
+
+################################################################################
+# Confirm we don't have unused code:
+################################################################################
+- repo: https://github.com/jendrikseipp/vulture
+  rev: 'v2.14'  # or any later Vulture version
+  hooks:
+  - id: vulture
+
+################################################################################
+# Run test suite, only at the end since code stuff above is so cyclical!
+################################################################################
+# - repo: local
+#   hooks:
+#   - id: system
+#     name: Running tests
+#     entry: .venv/bin/python -m pytest
+#     pass_filenames: false
+#     language: system

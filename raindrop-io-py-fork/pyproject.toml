@@ -1,0 +1,172 @@
+[project]
+name = "raindrop-io-py"
+version = "0.4.7"
+description = "API for Raindrop.io bookmark manager"
+authors = [{ name = "Peter Borocz <peter.borocz+raindrop-io-py@google.com>" }]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+keywords = ["python"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "python-dotenv (>=1.0.0)",
+    "requests-oauthlib (>=1.3.1)",
+    "pydantic (>=1.10.4,<3.0)",
+    "email-validator (>=2.1.0)",
+    "urllib3>=2.6,<2.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/PBorocz/raindrop-io-py"
+Documentation = "https://raindrop-io-py.rtfd.io"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=2.21.0,<3",
+    "requests>=2.28.2,<3",
+    "vcrpy>=4.2.1,<5",
+    "fawltydeps>=0.17.0,<0.18",
+    "pytest>=7.4.3,<8",
+]
+docs = [
+    "sphinx>=7.2.6,<8",
+    "sphinx-autobuild>=2021.3.14,<2022",
+]
+
+[tool.uv]
+default-groups = [
+    "dev",
+    "docs",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+lint.select = [
+	   # Which Ruff suites are we running?
+	   # (presented in order from the Ruff documentation page)
+	   "F",                          # Pyflakes
+	   "E", "W",                     # Pycodestyle (Errors and Warnings respectively)
+	   "C90",                        # Mccabe
+	   "I",                          # Isort
+	   "D",                          # Pydocstyle
+	   "UP",                         # pyupgrade
+	   "N",                          # pep8-naming
+	   "YTT",                        # flake8-2020
+	   # "ANN",                      # flake8-annotations
+	   # "S",                        # flake8-bandit
+	   # "BLE",                      # flake8-blind-except
+	   # "FBT",                      # flake8-boolean-trap
+	   "B",                          # flake8-bugbear
+	   # "A",                        # flake8-builtins (NO! We use "id" as an attribute, sue me...)
+	   # "C4",                       # flake8-comprehensions
+	   "T10",                        # flake8-debugger
+	   # "EM",                       # flake8-errmsg
+	   # "ISC",                      # flake8-implicit-str-concat
+	   # "ICN",                      # flake8-import-conventions
+	   # "T20",                      # flake8-print (NO! Removes all print statements!!)
+	   # "PT",                       # flake8-pytest-style
+	   "Q",                          # flake8-quotes
+	   # "RET",                      # flake8-return
+	   # "SIM",                      # flake8-simplify
+	   # "TID",                      # flake8-tidy-imports
+	   # "ARG",                      # flake8-unused-arguments
+	   # "DTZ",                      # flake8-datetimez
+	   # "ERA",                      # eradicate
+	   # "PD",                       # pandas-vet
+	   # "PGH",                      # pygrep-hooks
+	   # "PLC", "PLE", "PLR", "PLW", # pylint
+	   # "PIE",                      # flake8-pie
+	   "COM",                        # flake8-commas
+	   "RUF",                        # Ruff-specific rules
+	   ]
+lint.ignore = [
+  "D213",
+  "E402",
+  "I001",
+  "C901",   # 'process' is too complex (1 case only)
+  "N999",   # Invalid module name
+  "COM812", # OBO of ruff format but not sure where this is an issue.
+  "UP017",  # Allow use of datetime.timezone.utc for <=py3.10 compatibility.
+]
+
+[tool.ruff.lint.pydocstyle]
+# For more info, see:
+# https://github.com/charliermarsh/ruff#does-ruff-support-numpy--or-google-style-docstrings
+convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 13
+
+[tool.vulture]
+min_confidence = 80
+paths = ["raindropiopy", "examples", "vulture_whitelist.py"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["raindropiopy*"]
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.poe]
+verbosity = 2
+
+[tool.poe.tasks]
+#-------------------------------------------------------------------------------
+# 0: GENERAL Tasks
+#-------------------------------------------------------------------------------
+NOX = "nox --reuse-venv yes"
+
+#-------------------------------------------------------------------------------
+# 1: Version update (aka "bump")
+#-------------------------------------------------------------------------------
+VERSION = [
+  "_update_readme_version",
+  "_git_add_version",
+  "_git_commit",
+]
+_update_readme_version = "update_readme_version" # Uses pyproject.toml to update README.md
+_git_add_version       = "git add pyproject.toml README.md"
+_git_commit	       = "git commit -m 'Bump step commit (from poe)'"
+
+#-------------------------------------------------------------------------------
+# 2: Build
+#-------------------------------------------------------------------------------
+BUILD = [
+  "_clean",
+  "_pre_commit",
+  "_uv_build",
+]
+_clean	    = "rm -rf build dist *.egg-info"
+_pre_commit = "pre-commit run --all-files"
+_uv_build   = "uv build"
+
+#-------------------------------------------------------------------------------
+# 3: Release
+#-------------------------------------------------------------------------------
+RELEASE	= [
+  "_git_create_tag",
+  "_git_push_to_github",
+  "_publish_to_pypi",
+  "_git_create_release",
+]
+_git_push_to_github = "git push --follow-tags"
+_publish_to_pypi    = "uv publish"
+
+[tool.poe.tasks._git_create_tag]
+interpreter = "fish"
+shell = """
+  set -l release_version (grep "version =" pyproject.toml | head -1 | awk -F'\"' '{print $2}')
+  git tag -a "$release_version" --message "$release_version"
+"""
+
+[tool.poe.tasks._git_create_release]
+interpreter = "fish"
+shell = """
+  set -l release_version (grep "version =" pyproject.toml | head -1 | awk -F'\"' '{print $2}')
+  gh release create "$release_version" --title "$release_version"
+"""
