@@ -457,7 +457,7 @@ wheels = [
 [[package]]
 name = "raindrop-io-py"
 version = "0.4.7"
-source = { git = "https://github.com/PBorocz/raindrop-io-py.git#765e5b2885fb71fc5a4fc949f5cbe685c40c6572" }
+source = { git = "https://github.com/reuteras/raindrop-io-py.git#170432cc2ccf960869e643215d414558f59c1ce5" }
 dependencies = [
     { name = "email-validator" },
     { name = "pydantic" },
@@ -486,7 +486,7 @@ dev = [
 requires-dist = [
     { name = "feedgen", specifier = ">=1.0.0" },
     { name = "pydantic", specifier = "<3.0.0" },
-    { name = "raindrop-io-py", git = "https://github.com/PBorocz/raindrop-io-py.git" },
+    { name = "raindrop-io-py", git = "https://github.com/reuteras/raindrop-io-py.git" },
 ]
 
 [package.metadata.requires-dev]
