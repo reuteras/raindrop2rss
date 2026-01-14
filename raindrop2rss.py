@@ -16,7 +16,7 @@ from feedgen.entry import FeedEntry
 from feedgen.feed import FeedGenerator
 from pydantic import HttpUrl
 from raindropiopy import API, Collection, CollectionRef, Raindrop
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, ConnectionError
 
 
 def read_configuration(config_file: str) -> configparser.RawConfigParser:
@@ -92,8 +92,19 @@ def check_for_new_articles(con, arguments) -> bool:
                 done_id = Collection.get_or_create(
                     api=api, title=arguments.raindrop_handled_collection
                 ).id
-        except (HTTPError, ConnectionError):
-            pass
+        except ConnectionError as e:
+            print(
+                f"Network error: Unable to connect to Raindrop API. Please check your internet connection. Error: {e}"
+            )
+            return False
+        except HTTPError as e:
+            if e.response is not None and e.response.status_code == 401:
+                print(
+                    "Authentication error: Invalid Raindrop API token. Please check your client_secret in the config."
+                )
+            else:
+                print(f"HTTP error while setting up collection: {e}")
+            return False
 
     try:
         with API(token=arguments.client_secret) as api:
@@ -120,10 +131,32 @@ def check_for_new_articles(con, arguments) -> bool:
                 # Set the tag "rss" only when processing unsorted items (not when using --all)
                 if arguments.raindrop_handled_collection and not arguments.all:
                     Raindrop.update(
-                        api=api, id=item.id, collection=done_id, link=url_str, tags=["rss"]
+                        api=api,
+                        id=item.id,
+                        collection=done_id,
+                        link=url_str,
+                        tags=["rss"],
                     )
-    except (HTTPError, ConnectionError):
-        pass
+    except ConnectionError as e:
+        print(
+            f"Network error: Unable to connect to Raindrop API. Please check your internet connection. Error: {e}"
+        )
+        return False
+    except HTTPError as e:
+        if e.response is not None:
+            if e.response.status_code == 401:
+                print(
+                    "Authentication error: Invalid Raindrop API token. Please check your client_secret in the config."
+                )
+            elif e.response.status_code >= 500:
+                print(
+                    f"Server error: Raindrop API is currently unavailable (status {e.response.status_code}). Please try again later."
+                )
+            else:
+                print(f"HTTP error: {e.response.status_code} - {e}")
+        else:
+            print(f"HTTP error: {e}")
+        return False
     return updated
 
 
