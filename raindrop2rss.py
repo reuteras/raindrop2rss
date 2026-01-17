@@ -8,7 +8,6 @@ import shutil
 import sqlite3
 import sys
 from datetime import datetime
-from html import escape
 from pathlib import Path
 from typing import Any, Literal, NoReturn
 
@@ -183,7 +182,7 @@ def create_rss_feed(con, arguments):
         fe_url = article_link
         fe.link(href=fe_url)
         fe.id(fe_url)
-        fe.title(escape(article_title))
+        fe.title(article_title)
         fe.published(published=date)
         fe.summary(f"{note}")
 
