@@ -175,7 +175,7 @@ def create_rss_feed(con, arguments):
     # Add entries to the RSS feed (newest first)
     cursor = con.cursor()
     cursor.execute("""
-        SELECT date, article_link, article_title, note FROM articles ORDER BY id DESC
+        SELECT date, article_link, article_title, note FROM articles ORDER BY date DESC
     """)
     for date, article_link, article_title, note in cursor.fetchall():
         fe: FeedEntry = fg.add_entry()
