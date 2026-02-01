@@ -136,8 +136,15 @@
     main.appendChild(h2)
 
     const entries = feed.getElementsByTagNameNS(atomNS, 'entry')
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i]
+    const sortedEntries = Array.from(entries).sort((a, b) => {
+      const aPublished = getElementText(a, 'published', atomNS)
+      const bPublished = getElementText(b, 'published', atomNS)
+      const aTime = Date.parse(aPublished || 0)
+      const bTime = Date.parse(bPublished || 0)
+      return bTime - aTime
+    })
+    for (let i = 0; i < sortedEntries.length; i++) {
+      const entry = sortedEntries[i]
       const entryTitle = getElementText(entry, 'title', atomNS)
       const entryLink = getElementAttribute(entry, 'link', atomNS, 'href')
       const published = getElementText(entry, 'published', atomNS)
