@@ -15,7 +15,7 @@ from feedgen.entry import FeedEntry
 from feedgen.feed import FeedGenerator
 from pydantic import HttpUrl
 from raindropiopy import API, Collection, CollectionRef, Raindrop
-from requests.exceptions import HTTPError, ConnectionError
+from requests.exceptions import ConnectionError, HTTPError
 
 
 def read_configuration(config_file: str) -> configparser.RawConfigParser:
