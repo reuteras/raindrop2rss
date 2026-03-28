@@ -72,9 +72,10 @@ def add_article_to_db(con, date, alink, atitle, note: str, cover: str | None) ->
         try:
             with con:
                 res = con.execute(
-                    "SELECT note FROM articles WHERE article_link=?", (alink,)
+                    "SELECT note, cover FROM articles WHERE article_link=?", (alink,)
                 )
-                if not res.fetchone()[0] == note:
+                stored_note, stored_cover = res.fetchone()
+                if stored_note != note or (cover and not stored_cover):
                     con.execute(
                         "UPDATE articles SET date=?, article_title=?, note=?, cover=? WHERE article_link=?",
                         (date.isoformat(), atitle, note, cover, alink),
