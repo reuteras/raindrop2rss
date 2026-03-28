@@ -197,7 +197,7 @@ def create_rss_feed(con, arguments):
             summary = f'<img src="{cover}" alt="" style="max-width:100%;"/><br/>{note}'
         else:
             summary = note
-        fe.summary(summary, isSummary=False)
+        fe.summary(summary)
 
     return fg.atom_str(pretty=True).decode("utf-8")
 
