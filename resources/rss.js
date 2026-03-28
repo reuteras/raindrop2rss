@@ -165,9 +165,13 @@
       article.appendChild(datePara)
 
       if (summary) {
-        const summaryPara = html('p')
-        summaryPara.innerHTML = summary
-        article.appendChild(summaryPara)
+        const summaryDiv = html('div')
+        const parser = new DOMParser()
+        const parsed = parser.parseFromString(`<body>${summary}</body>`, 'text/html')
+        Array.from(parsed.body.childNodes).forEach(node => {
+          summaryDiv.appendChild(document.adoptNode(node))
+        })
+        article.appendChild(summaryDiv)
       }
 
       main.appendChild(article)
