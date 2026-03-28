@@ -43,22 +43,29 @@ def init_db(arguments) -> sqlite3.Connection:
                 date VARCHAR,
                 article_link VARCHAR UNIQUE,
                 article_title VARCHAR,
-                note VARCHAR
+                note VARCHAR,
+                cover VARCHAR
             )"""
         )
+    except sqlite3.OperationalError:
+        pass
+    # Migrate existing databases that don't have the cover column
+    try:
+        cursor.execute("ALTER TABLE articles ADD COLUMN cover VARCHAR")
+        con.commit()
     except sqlite3.OperationalError:
         pass
     return con
 
 
-def add_article_to_db(con, date, alink, atitle, note: str) -> bool:
+def add_article_to_db(con, date, alink, atitle, note: str, cover: str | None) -> bool:
     """Add article to database."""
     updated: bool = False
     try:
         with con:
             con.execute(
-                "INSERT INTO articles(date, article_link, article_title, note) VALUES(?, ?, ?, ?)",
-                (date.isoformat(), alink, atitle, note),
+                "INSERT INTO articles(date, article_link, article_title, note, cover) VALUES(?, ?, ?, ?, ?)",
+                (date.isoformat(), alink, atitle, note, cover),
             )
         updated = True
     except sqlite3.IntegrityError:
@@ -69,8 +76,8 @@ def add_article_to_db(con, date, alink, atitle, note: str) -> bool:
                 )
                 if not res.fetchone()[0] == note:
                     con.execute(
-                        "UPDATE articles SET date=?, article_title=?, note=? WHERE article_link=?",
-                        (date.isoformat(), atitle, note, alink),
+                        "UPDATE articles SET date=?, article_title=?, note=?, cover=? WHERE article_link=?",
+                        (date.isoformat(), atitle, note, cover, alink),
                     )
                     updated = True
         except sqlite3.IntegrityError:
@@ -121,10 +128,11 @@ def check_for_new_articles(con, arguments) -> bool:
                 date: datetime | None = item.created
                 title: str | None = item.title
                 url: HttpUrl | None = item.link
+                cover: str | None = item.cover
                 # Convert HttpUrl to string for database storage
                 url_str: str = str(url) if url else ""
                 if add_article_to_db(
-                    con=con, date=date, alink=url_str, atitle=title, note=notetext
+                    con=con, date=date, alink=url_str, atitle=title, note=notetext, cover=cover
                 ):
                     updated = True
                 # Set the tag "rss" only when processing unsorted items (not when using --all)
@@ -175,16 +183,20 @@ def create_rss_feed(con, arguments):
     # Add entries to the RSS feed (newest first)
     cursor = con.cursor()
     cursor.execute("""
-        SELECT date, article_link, article_title, note FROM articles ORDER BY date ASC
+        SELECT date, article_link, article_title, note, cover FROM articles ORDER BY date ASC
     """)
-    for date, article_link, article_title, note in cursor.fetchall():
+    for date, article_link, article_title, note, cover in cursor.fetchall():
         fe: FeedEntry = fg.add_entry()
         fe_url = article_link
         fe.link(href=fe_url)
         fe.id(fe_url)
         fe.title(article_title)
         fe.published(published=date)
-        fe.summary(f"{note}")
+        if cover:
+            summary = f'<img src="{cover}" alt="" style="max-width:100%;"/><br/>{note}'
+        else:
+            summary = note
+        fe.summary(summary, isSummary=False)
 
     return fg.atom_str(pretty=True).decode("utf-8")
 
