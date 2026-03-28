@@ -165,13 +165,23 @@
       article.appendChild(datePara)
 
       if (summary) {
-        const summaryDiv = html('div')
-        const parser = new DOMParser()
-        const parsed = parser.parseFromString(`<body>${summary}</body>`, 'text/html')
-        Array.from(parsed.body.childNodes).forEach(node => {
-          summaryDiv.appendChild(document.adoptNode(node))
-        })
-        article.appendChild(summaryDiv)
+        const imgMatch = summary.match(/^<img src="([^"]*)"[^>]*\/>(<br\/>)?(.*)$/s)
+        if (imgMatch) {
+          const coverImg = html('img')
+          coverImg.setAttribute('src', imgMatch[1])
+          coverImg.setAttribute('alt', '')
+          coverImg.setAttribute('style', 'max-width:100%;display:block;margin-bottom:0.5em;')
+          article.appendChild(coverImg)
+          if (imgMatch[3]) {
+            const summaryPara = html('p')
+            summaryPara.textContent = imgMatch[3]
+            article.appendChild(summaryPara)
+          }
+        } else {
+          const summaryPara = html('p')
+          summaryPara.textContent = summary
+          article.appendChild(summaryPara)
+        }
       }
 
       main.appendChild(article)
