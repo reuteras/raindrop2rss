@@ -166,7 +166,7 @@
 
       if (summary) {
         const summaryPara = html('p')
-        summaryPara.textContent = summary
+        summaryPara.innerHTML = summary
         article.appendChild(summaryPara)
       }
 
