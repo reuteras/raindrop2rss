@@ -315,7 +315,7 @@ def main() -> NoReturn:
     parser = argparse.ArgumentParser(
         prog="raindrop2rss",
         description="""Tool to get links from raindrop.io and publish them as an RSS feed.""",
-        epilog="""Program made by @peter.reuteras@infosec.exchange on Mastodon.
+        epilog="""Program made by peter@reuteras.net.
             If you find a bug please let me know.""",
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
