@@ -165,29 +165,11 @@
       article.appendChild(datePara)
 
       if (summary) {
-        // Create a temporary div to safely parse and sanitize HTML content
-        const tempDiv = html('div')
-        tempDiv.innerHTML = summary
-
-        // Extract and handle images safely
-        const images = tempDiv.getElementsByTagName('img')
-        if (images.length > 0) {
-          const coverImg = html('img')
-          coverImg.setAttribute('src', images[0].src)
-          coverImg.setAttribute('alt', images[0].alt || '')
-          coverImg.setAttribute('style', 'max-width:100%;display:block;margin-bottom:0.5em;')
-          article.appendChild(coverImg)
-
-          // Remove the image from the text content
-          tempDiv.removeChild(images[0])
-        }
-
-        // Use textContent to safely render the remaining content (auto-escapes HTML)
-        if (tempDiv.textContent.trim()) {
-          const summaryPara = html('p')
-          summaryPara.textContent = tempDiv.textContent
-          article.appendChild(summaryPara)
-        }
+        // Safe approach: treat summary as text only to prevent XSS
+        // If the summary contains HTML (like images), it will be displayed as text
+        const summaryPara = html('p')
+        summaryPara.textContent = summary
+        article.appendChild(summaryPara)
       }
 
       main.appendChild(article)
