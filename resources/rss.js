@@ -165,21 +165,27 @@
       article.appendChild(datePara)
 
       if (summary) {
-        const imgMatch = summary.match(/^<img src="([^"]*)"[^>]*\/>(<br\/>)?(.*)$/s)
-        if (imgMatch) {
+        // Create a temporary div to safely parse and sanitize HTML content
+        const tempDiv = html('div')
+        tempDiv.innerHTML = summary
+
+        // Extract and handle images safely
+        const images = tempDiv.getElementsByTagName('img')
+        if (images.length > 0) {
           const coverImg = html('img')
-          coverImg.setAttribute('src', imgMatch[1])
-          coverImg.setAttribute('alt', '')
+          coverImg.setAttribute('src', images[0].src)
+          coverImg.setAttribute('alt', images[0].alt || '')
           coverImg.setAttribute('style', 'max-width:100%;display:block;margin-bottom:0.5em;')
           article.appendChild(coverImg)
-          if (imgMatch[3]) {
-            const summaryPara = html('p')
-            summaryPara.textContent = imgMatch[3]
-            article.appendChild(summaryPara)
-          }
-        } else {
+
+          // Remove the image from the text content
+          tempDiv.removeChild(images[0])
+        }
+
+        // Use textContent to safely render the remaining content (auto-escapes HTML)
+        if (tempDiv.textContent.trim()) {
           const summaryPara = html('p')
-          summaryPara.textContent = summary
+          summaryPara.textContent = tempDiv.textContent
           article.appendChild(summaryPara)
         }
       }
