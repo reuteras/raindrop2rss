@@ -58,7 +58,7 @@ def init_db(arguments) -> sqlite3.Connection:
     return con
 
 
-def add_article_to_db(con, date, alink, atitle, note: str, cover: str | None) -> bool:
+def add_article_to_db(con, date, alink, atitle, note: str, cover: str | None) -> bool:  # noqa: PLR0913
     """Add article to database."""
     updated: bool = False
     try:
@@ -87,7 +87,7 @@ def add_article_to_db(con, date, alink, atitle, note: str, cover: str | None) ->
     return updated
 
 
-def check_for_new_articles(con, arguments) -> bool:
+def check_for_new_articles(con, arguments) -> bool:  # noqa PLR0912
     """Check for new articles in Raindrop and add them to the database."""
     updated = False
     done_id: int = 0
@@ -105,7 +105,7 @@ def check_for_new_articles(con, arguments) -> bool:
             )
             return False
         except HTTPError as e:
-            if e.response is not None and e.response.status_code == 401:
+            if e.response is not None and e.response.status_code == 401:  # noqa: PLR2004
                 print(
                     "Authentication error: Invalid Raindrop API token. Please check your client_secret in the config."
                 )
@@ -133,7 +133,12 @@ def check_for_new_articles(con, arguments) -> bool:
                 # Convert HttpUrl to string for database storage
                 url_str: str = str(url) if url else ""
                 if add_article_to_db(
-                    con=con, date=date, alink=url_str, atitle=title, note=notetext, cover=cover
+                    con=con,
+                    date=date,
+                    alink=url_str,
+                    atitle=title,
+                    note=notetext,
+                    cover=cover,
                 ):
                     updated = True
                 # Set the tag "rss" only when processing unsorted items (not when using --all)
@@ -152,11 +157,11 @@ def check_for_new_articles(con, arguments) -> bool:
         return False
     except HTTPError as e:
         if e.response is not None:
-            if e.response.status_code == 401:
+            if e.response.status_code == 401:  # noqa: PLR2004
                 print(
                     "Authentication error: Invalid Raindrop API token. Please check your client_secret in the config."
                 )
-            elif e.response.status_code >= 500:
+            elif e.response.status_code >= 500:  # noqa: PLR2004
                 print(
                     f"Server error: Raindrop API is currently unavailable (status {e.response.status_code}). Please try again later."
                 )
@@ -174,6 +179,7 @@ def create_rss_feed(con, arguments):
 
     # Create the RSS feed
     fg = FeedGenerator()
+    fg.load_extension("media", atom=True, rss=True)
     fg.id(id=arguments.url)
     fg.author(author={"name": arguments.name, "email": arguments.email})
     fg.title(title=arguments.title)
@@ -194,6 +200,7 @@ def create_rss_feed(con, arguments):
         fe.title(article_title)
         fe.published(published=date)
         if cover:
+            fe.media(url={cover}, medium="image")
             summary = f'<img src="{cover}" alt="" style="max-width:100%;"/><br/>{note}'
         else:
             summary = note
