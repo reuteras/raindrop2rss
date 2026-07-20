@@ -200,7 +200,7 @@ def create_rss_feed(con, arguments):
         fe.title(article_title)
         fe.published(published=date)
         if cover:
-            fe.media(url={cover}, medium="image")
+            fe.media.content(url={cover}, medium="image")
             summary = f'<img src="{cover}" alt="" style="max-width:100%;"/><br/>{note}'
         else:
             summary = note
