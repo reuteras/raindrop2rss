@@ -7,15 +7,17 @@ import re
 import shutil
 import sqlite3
 import sys
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal, NoReturn
 
+import requests
 from feedgen.entry import FeedEntry
 from feedgen.feed import FeedGenerator
 from pydantic import HttpUrl
 from raindropiopy import API, Collection, CollectionRef, Raindrop
-from requests.exceptions import ConnectionError, HTTPError
+from requests.exceptions import ConnectionError, HTTPError, RequestException
 
 
 def read_configuration(config_file: str) -> configparser.RawConfigParser:
@@ -26,6 +28,35 @@ def read_configuration(config_file: str) -> configparser.RawConfigParser:
         print("Can't find configuration file.")
         sys.exit(1)
     return config
+
+
+DEFAULT_IMAGE_MIME_TYPE = "image/jpeg"
+
+
+def get_image_mime_type(url: str) -> str | None:
+    """Determine an image's real mime type from the server's Content-Type header.
+
+    The URL's file extension can't be trusted (e.g. a raindrop cover URL
+    ending in .pdf can actually serve a .webp image), so this inspects the
+    HTTP response instead. Tries HEAD first and falls back to GET since some
+    servers don't return Content-Type on HEAD requests.
+    """
+    for method in (requests.head, requests.get):
+        kwargs = {"allow_redirects": True, "timeout": 10}
+        if method is requests.get:
+            kwargs["stream"] = True
+        try:
+            response = method(url, **kwargs)
+            with response:
+                if response.ok:
+                    content_type = (
+                        response.headers.get("Content-Type", "").split(";")[0].strip()
+                    )
+                    if content_type.startswith("image/"):
+                        return content_type
+        except RequestException:
+            continue
+    return None
 
 
 def init_db(arguments) -> sqlite3.Connection:
@@ -44,41 +75,72 @@ def init_db(arguments) -> sqlite3.Connection:
                 article_link VARCHAR UNIQUE,
                 article_title VARCHAR,
                 note VARCHAR,
-                cover VARCHAR
+                cover VARCHAR,
+                cover_type VARCHAR
             )"""
         )
     except sqlite3.OperationalError:
         pass
-    # Migrate existing databases that don't have the cover column
-    try:
-        cursor.execute("ALTER TABLE articles ADD COLUMN cover VARCHAR")
-        con.commit()
-    except sqlite3.OperationalError:
-        pass
+    # Migrate existing databases that don't have the cover/cover_type columns
+    for column in ("cover", "cover_type"):
+        try:
+            cursor.execute(f"ALTER TABLE articles ADD COLUMN {column} VARCHAR")
+            con.commit()
+        except sqlite3.OperationalError:
+            pass
     return con
 
 
-def add_article_to_db(con, date, alink, atitle, note: str, cover: str | None) -> bool:  # noqa: PLR0913
+@dataclass
+class Article:
+    """A raindrop item destined for the articles table."""
+
+    date: datetime
+    link: str
+    title: str | None
+    note: str
+    cover: str | None
+
+
+def add_article_to_db(con, article: Article) -> bool:
     """Add article to database."""
     updated: bool = False
     try:
         with con:
             con.execute(
-                "INSERT INTO articles(date, article_link, article_title, note, cover) VALUES(?, ?, ?, ?, ?)",
-                (date.isoformat(), alink, atitle, note, cover),
+                "INSERT INTO articles(date, article_link, article_title, note, cover, cover_type) VALUES(?, ?, ?, ?, ?, ?)",
+                (
+                    article.date.isoformat(),
+                    article.link,
+                    article.title,
+                    article.note,
+                    article.cover,
+                    get_image_mime_type(article.cover) if article.cover else None,
+                ),
             )
         updated = True
     except sqlite3.IntegrityError:
         try:
             with con:
                 res = con.execute(
-                    "SELECT note, cover FROM articles WHERE article_link=?", (alink,)
+                    "SELECT note, cover, cover_type FROM articles WHERE article_link=?",
+                    (article.link,),
                 )
-                stored_note, stored_cover = res.fetchone()
-                if stored_note != note or (cover and not stored_cover):
+                stored_note, stored_cover, stored_cover_type = res.fetchone()
+                if stored_note != article.note or (article.cover and not stored_cover):
+                    cover_type = stored_cover_type
+                    if article.cover and not stored_cover:
+                        cover_type = get_image_mime_type(article.cover)
                     con.execute(
-                        "UPDATE articles SET date=?, article_title=?, note=?, cover=? WHERE article_link=?",
-                        (date.isoformat(), atitle, note, cover, alink),
+                        "UPDATE articles SET date=?, article_title=?, note=?, cover=?, cover_type=? WHERE article_link=?",
+                        (
+                            article.date.isoformat(),
+                            article.title,
+                            article.note,
+                            article.cover,
+                            cover_type,
+                            article.link,
+                        ),
                     )
                     updated = True
         except sqlite3.IntegrityError:
@@ -87,32 +149,82 @@ def add_article_to_db(con, date, alink, atitle, note: str, cover: str | None) ->
     return updated
 
 
-def check_for_new_articles(con, arguments) -> bool:  # noqa PLR0912
-    """Check for new articles in Raindrop and add them to the database."""
-    updated = False
-    done_id: int = 0
+HTTP_UNAUTHORIZED = 401
+HTTP_SERVER_ERROR = 500
 
-    # Only set up "done" collection if not downloading all items
+
+def _print_connection_error(e: ConnectionError) -> None:
+    print(
+        f"Network error: Unable to connect to Raindrop API. Please check your internet connection. Error: {e}"
+    )
+
+
+def _print_http_error(e: HTTPError, context: str = "") -> None:
+    """Print a message for an HTTPError raised while talking to the Raindrop API."""
+    status = e.response.status_code if e.response is not None else None
+    if status == HTTP_UNAUTHORIZED:
+        print(
+            "Authentication error: Invalid Raindrop API token. Please check your client_secret in the config."
+        )
+    elif status is not None and status >= HTTP_SERVER_ERROR:
+        print(
+            f"Server error: Raindrop API is currently unavailable (status {status}). Please try again later."
+        )
+    elif status is not None:
+        print(f"HTTP error{context}: {status} - {e}")
+    else:
+        print(f"HTTP error{context}: {e}")
+
+
+def _get_done_collection_id(arguments) -> int | None:
+    """Get or create the "done" collection. Returns 0 if not needed, None on failure."""
+    if not (arguments.raindrop_handled_collection and not arguments.all):
+        return 0
+    try:
+        with API(token=arguments.client_secret) as api:
+            return Collection.get_or_create(
+                api=api, title=arguments.raindrop_handled_collection
+            ).id
+    except ConnectionError as e:
+        _print_connection_error(e)
+        return None
+    except HTTPError as e:
+        _print_http_error(e, " while setting up collection")
+        return None
+
+
+def _process_raindrop_item(con, api, item, arguments, done_id: int) -> bool:
+    """Add a single raindrop item to the database and mark it as handled."""
+    try:
+        notetext: str = item.other["note"]
+    except KeyError:
+        notetext = ""
+    url: HttpUrl | None = item.link
+    # Convert HttpUrl to string for database storage
+    url_str: str = str(url) if url else ""
+    article = Article(
+        date=item.created,
+        link=url_str,
+        title=item.title,
+        note=notetext,
+        cover=item.cover,
+    )
+    updated = add_article_to_db(con=con, article=article)
+    # Set the tag "rss" only when processing unsorted items (not when using --all)
     if arguments.raindrop_handled_collection and not arguments.all:
-        try:
-            with API(token=arguments.client_secret) as api:
-                done_id = Collection.get_or_create(
-                    api=api, title=arguments.raindrop_handled_collection
-                ).id
-        except ConnectionError as e:
-            print(
-                f"Network error: Unable to connect to Raindrop API. Please check your internet connection. Error: {e}"
-            )
-            return False
-        except HTTPError as e:
-            if e.response is not None and e.response.status_code == 401:  # noqa: PLR2004
-                print(
-                    "Authentication error: Invalid Raindrop API token. Please check your client_secret in the config."
-                )
-            else:
-                print(f"HTTP error while setting up collection: {e}")
-            return False
+        Raindrop.update(
+            api=api, id=item.id, collection=done_id, link=url_str, tags=["rss"]
+        )
+    return updated
 
+
+def check_for_new_articles(con, arguments) -> bool:
+    """Check for new articles in Raindrop and add them to the database."""
+    done_id = _get_done_collection_id(arguments)
+    if done_id is None:
+        return False
+
+    updated = False
     try:
         with API(token=arguments.client_secret) as api:
             # Fetch all raindrops if --all flag is set, otherwise only unsorted
@@ -122,53 +234,15 @@ def check_for_new_articles(con, arguments) -> bool:  # noqa PLR0912
                 items = Raindrop.search(api=api, collection=CollectionRef.Unsorted)  # type: ignore
 
             for item in items:
-                try:
-                    notetext: str = item.other["note"]
-                except KeyError:
-                    notetext: str = ""
-                date: datetime | None = item.created
-                title: str | None = item.title
-                url: HttpUrl | None = item.link
-                cover: str | None = item.cover
-                # Convert HttpUrl to string for database storage
-                url_str: str = str(url) if url else ""
-                if add_article_to_db(
-                    con=con,
-                    date=date,
-                    alink=url_str,
-                    atitle=title,
-                    note=notetext,
-                    cover=cover,
+                if _process_raindrop_item(
+                    con=con, api=api, item=item, arguments=arguments, done_id=done_id
                 ):
                     updated = True
-                # Set the tag "rss" only when processing unsorted items (not when using --all)
-                if arguments.raindrop_handled_collection and not arguments.all:
-                    Raindrop.update(
-                        api=api,
-                        id=item.id,
-                        collection=done_id,
-                        link=url_str,
-                        tags=["rss"],
-                    )
     except ConnectionError as e:
-        print(
-            f"Network error: Unable to connect to Raindrop API. Please check your internet connection. Error: {e}"
-        )
+        _print_connection_error(e)
         return False
     except HTTPError as e:
-        if e.response is not None:
-            if e.response.status_code == 401:  # noqa: PLR2004
-                print(
-                    "Authentication error: Invalid Raindrop API token. Please check your client_secret in the config."
-                )
-            elif e.response.status_code >= 500:  # noqa: PLR2004
-                print(
-                    f"Server error: Raindrop API is currently unavailable (status {e.response.status_code}). Please try again later."
-                )
-            else:
-                print(f"HTTP error: {e.response.status_code} - {e}")
-        else:
-            print(f"HTTP error: {e}")
+        _print_http_error(e)
         return False
     return updated
 
@@ -179,7 +253,6 @@ def create_rss_feed(con, arguments):
 
     # Create the RSS feed
     fg = FeedGenerator()
-    fg.load_extension("media", atom=True, rss=True)
     fg.id(id=arguments.url)
     fg.author(author={"name": arguments.name, "email": arguments.email})
     fg.title(title=arguments.title)
@@ -190,9 +263,9 @@ def create_rss_feed(con, arguments):
     # Add entries to the RSS feed (newest first)
     cursor = con.cursor()
     cursor.execute("""
-        SELECT date, article_link, article_title, note, cover FROM articles ORDER BY date ASC
+        SELECT date, article_link, article_title, note, cover, cover_type FROM articles ORDER BY date ASC
     """)
-    for date, article_link, article_title, note, cover in cursor.fetchall():
+    for date, article_link, article_title, note, cover, cover_type in cursor.fetchall():
         fe: FeedEntry = fg.add_entry()
         fe_url = article_link
         fe.link(href=fe_url)
@@ -200,7 +273,15 @@ def create_rss_feed(con, arguments):
         fe.title(article_title)
         fe.published(published=date)
         if cover:
-            fe.media.content(url=cover, medium="image", group=None)
+            # Backfill cover_type for rows stored before this column existed.
+            resolved_cover_type = cover_type or get_image_mime_type(cover)
+            if not cover_type:
+                with con:
+                    con.execute(
+                        "UPDATE articles SET cover_type=? WHERE article_link=?",
+                        (resolved_cover_type, article_link),
+                    )
+            fe.enclosure(cover, 0, resolved_cover_type or DEFAULT_IMAGE_MIME_TYPE)
             summary = f'<img src="{cover}" alt="" style="max-width:100%;"/><br/>{note}'
         else:
             summary = note
