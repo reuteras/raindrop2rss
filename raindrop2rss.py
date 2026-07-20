@@ -19,6 +19,10 @@ from pydantic import HttpUrl
 from raindropiopy import API, Collection, CollectionRef, Raindrop
 from requests.exceptions import ConnectionError, HTTPError, RequestException
 
+import feedgen_atom_patch
+
+feedgen_atom_patch.apply()
+
 
 def read_configuration(config_file: str) -> configparser.RawConfigParser:
     """Read configuration file."""

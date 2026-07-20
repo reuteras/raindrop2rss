@@ -64,3 +64,8 @@ raindrop-io-py = { git = "https://github.com/reuteras/raindrop-io-py.git" }
 
 [tool.ruff.lint.pydocstyle]
 convention="google"
+
+[tool.ruff.lint.per-file-ignores]
+# Near-verbatim copy of feedgen's FeedEntry.atom_entry(), kept structurally
+# close to upstream so it stays easy to diff against future feedgen releases.
+"feedgen_atom_patch.py" = ["PLR0912", "PLR0915"]
