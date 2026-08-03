@@ -101,7 +101,12 @@ main > header p.meta {
 
 /* Links */
 a {
-    color: #0066cc;
+    color: #06c;
+    text-decoration: none;
+}
+
+h3 a {
+    color: #222;
     text-decoration: none;
 }
 
@@ -110,13 +115,8 @@ a:hover {
     text-decoration: underline;
 }
 
-h3 a {
-    color: #222;
-    text-decoration: none;
-}
-
 h3 a:hover {
-    color: #0066cc;
+    color: #06c;
     text-decoration: underline;
 }
 
@@ -132,7 +132,7 @@ article:last-child {
 }
 
 /* Responsive design */
-@media (max-width: 640px) {
+@media (width <= 640px) {
     body {
         padding: 1rem;
     }
@@ -165,20 +165,20 @@ article:last-child {
         color: #f0f0f0;
     }
 
-    h3 a {
-        color: #f0f0f0;
-    }
-
-    h3 a:hover {
-        color: #66b3ff;
-    }
-
     a {
         color: #66b3ff;
     }
 
+    h3 a {
+        color: #f0f0f0;
+    }
+
     a:hover {
-        color: #99ccff;
+        color: #9cf;
+    }
+
+    h3 a:hover {
+        color: #66b3ff;
     }
 
     p.meta {
