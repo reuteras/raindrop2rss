@@ -506,7 +506,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "feedgen", specifier = ">=1.0.0" },
-    { name = "pydantic", specifier = "<3.0.0" },
+    { name = "pydantic" },
     { name = "raindrop-io-py", git = "https://github.com/reuteras/raindrop-io-py.git" },
 ]
 
