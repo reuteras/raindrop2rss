@@ -17,7 +17,8 @@ from feedgen.entry import FeedEntry
 from feedgen.feed import FeedGenerator
 from pydantic import HttpUrl
 from raindropiopy import API, Collection, CollectionRef, Raindrop
-from requests.exceptions import ConnectionError, HTTPError, RequestException
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import HTTPError, RequestException
 
 import feedgen_atom_patch
 
@@ -157,7 +158,7 @@ HTTP_UNAUTHORIZED = 401
 HTTP_SERVER_ERROR = 500
 
 
-def _print_connection_error(e: ConnectionError) -> None:
+def _print_connection_error(e: RequestsConnectionError) -> None:
     print(
         f"Network error: Unable to connect to Raindrop API. Please check your internet connection. Error: {e}"
     )
@@ -189,7 +190,7 @@ def _get_done_collection_id(arguments) -> int | None:
             return Collection.get_or_create(
                 api=api, title=arguments.raindrop_handled_collection
             ).id
-    except ConnectionError as e:
+    except RequestsConnectionError as e:
         _print_connection_error(e)
         return None
     except HTTPError as e:
@@ -242,7 +243,7 @@ def check_for_new_articles(con, arguments) -> bool:
                     con=con, api=api, item=item, arguments=arguments, done_id=done_id
                 ):
                     updated = True
-    except ConnectionError as e:
+    except RequestsConnectionError as e:
         _print_connection_error(e)
         return False
     except HTTPError as e:
@@ -277,15 +278,9 @@ def create_rss_feed(con, arguments):
         fe.title(article_title)
         fe.published(published=date)
         if cover:
-            # Backfill cover_type for rows stored before this column existed.
-            resolved_cover_type = cover_type or get_image_mime_type(cover)
-            if not cover_type:
-                with con:
-                    con.execute(
-                        "UPDATE articles SET cover_type=? WHERE article_link=?",
-                        (resolved_cover_type, article_link),
-                    )
-            fe.enclosure(cover, 0, resolved_cover_type or DEFAULT_IMAGE_MIME_TYPE)
+            # Never fetch here: cover_type is only looked up when an article is
+            # added, so building the feed makes no requests to cover URLs.
+            fe.enclosure(cover, 0, cover_type or DEFAULT_IMAGE_MIME_TYPE)
             summary = f'<img src="{cover}" alt="" style="max-width:100%;"/><br/>{note}'
         else:
             summary = note
