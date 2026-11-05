@@ -37,6 +37,16 @@ def read_configuration(config_file: str) -> configparser.RawConfigParser:
 
 DEFAULT_IMAGE_MIME_TYPE = "image/jpeg"
 
+# Cover images are scaled down (never up) to fit within this box, keeping the
+# aspect ratio. The plain max-width comes first as a fallback for readers that
+# don't understand min().
+MAX_IMAGE_WIDTH = 1000
+MAX_IMAGE_HEIGHT = 600
+COVER_IMAGE_STYLE = (
+    f"width:auto;height:auto;max-width:{MAX_IMAGE_WIDTH}px;"
+    f"max-width:min(100%,{MAX_IMAGE_WIDTH}px);max-height:{MAX_IMAGE_HEIGHT}px;"
+)
+
 
 def get_image_mime_type(url: str) -> str | None:
     """Determine an image's real mime type from the server's Content-Type header.
@@ -281,7 +291,9 @@ def create_rss_feed(con, arguments):
             # Never fetch here: cover_type is only looked up when an article is
             # added, so building the feed makes no requests to cover URLs.
             fe.enclosure(cover, 0, cover_type or DEFAULT_IMAGE_MIME_TYPE)
-            summary = f'<img src="{cover}" alt="" style="max-width:100%;"/><br/>{note}'
+            summary = (
+                f'<img src="{cover}" alt="" style="{COVER_IMAGE_STYLE}"/><br/>{note}'
+            )
         else:
             summary = note
         fe.summary(summary)
