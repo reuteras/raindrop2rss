@@ -621,7 +621,7 @@ wheels = [
 [[package]]
 name = "raindrop-io-py"
 version = "0.4.7"
-source = { git = "https://github.com/reuteras/raindrop-io-py.git#76140d9c72476398d6cfb314d5f1de0ae78cdf87" }
+source = { git = "https://github.com/reuteras/raindrop-io-py.git#2eb6d97f489fefd60f20c60a0ea64de5ebd224c2" }
 dependencies = [
     { name = "pydantic" },
     { name = "python-dotenv" },
